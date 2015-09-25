@@ -60,17 +60,25 @@
       {
         $scope.userNotFound = false;
         $scope.loaded = false;
-		    var splitted = $scope.url.split('/');
-    		var n1 = splitted.indexOf("github.com");
-    		$scope.username = splitted[n1 + 1];
-    		$scope.reponame = splitted[n1 + 2];
-    		var date = new Date();
-    		date.setDate(date.getDate()-1);
-    		$scope.yesterday = date.toISOString();
-    		var date2 = new Date();
-    		date2.setDate(date.getDate()-7);
-    		$scope.weekAgo = date2.toISOString();
-       
+        //To get the username and reponame
+		var splitted = $scope.url.split('/');
+		var n1 = splitted.indexOf("github.com");
+		//username should be the next of it and reponame should be the next to next
+		$scope.username = splitted[n1 + 1];
+		$scope.reponame = splitted[n1 + 2];
+
+		//Now we have to set two dates one is for yesterday and other is for a week ago
+		//Yesterday
+		var date = new Date();
+		date.setDate(date.getDate()-1);
+		$scope.yesterday = date.toISOString();
+
+		//weekago
+		var date2 = new Date();
+		date2.setDate(date.getDate()-7);
+		$scope.weekAgo = date2.toISOString();
+   
+   		//Basic
         $http.get("https://api.github.com/users/" + $scope.username)
         .success(function (data) 
         {
@@ -83,54 +91,58 @@
             $scope.userNotFound = true;
         });
 
-    		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame + "/issues?page=1&per_page=100&since=" + $scope.yesterday)
-    		.success(function(data)
-    		{
-    			$scope.issues = data;
-    
-    
-    			$scope.issuesNumber = Object.keys($scope.issues).length;
-    		});
+        //Count issues in the last 24 hrs
+		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame + "/issues?page=1&per_page=100&since=" + $scope.yesterday)
+		.success(function(data)
+		{
+			$scope.issues = data;
+			$scope.issuesNumber = Object.keys($scope.issues).length;
 
-    		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame + "/issues?page=1&per_page=100&since=" + $scope.weekAgo).success(function(data)
-    		{
-    			$scope.issues = data;
-    			$scope.issuesNumber2 = Object.keys($scope.issues).length;
-    		});
+		});
 
-    		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame + "/pulls?page=1&per_page=100")
-    		.success(function(data)
-    		{
-    			$scope.issues2 = data;
-    			$scope.pullNumber = Object.keys($scope.issues2).length;
-    			var yester = new Date();
-    			yester.setDate(date.getDate()-1);
-    			yester = yester-0;
-    	 
-    			var weeki = new Date();
-    			weeki.setDate(date.getDate() - 7);
-    			weeki = weeki-0;
-    	  
-    			var yesterdayPullCount=0,weekPullCount=0,restPullCount=0;
-    			for(var i=0;i<$scope.pullNumber;i++)
-    			{
-    				if( Date.parse(data[i].created_at) > yester) yesterdayPullCount++;
-    				else if( Date.parse(data[i].created_at) > weeki && Date.parse(data[i].created_at) <= yester) weekPullCount++;
-    				else if(Date.parse(data[i].created_at) <= weeki) restPullCount++;
-    			}
-    			$scope.yesterdayPullCounts = yesterdayPullCount;
-    			$scope.weekPullCounts = weekPullCount;
-    			$scope.restPullCounts = restPullCount;
-    		});
-       
+		//count issues in the last 1 week
+		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame + "/issues?page=1&per_page=100&since=" + $scope.weekAgo)
+		.success(function(data)
+		{
+			$scope.issues = data;
+			$scope.issuesNumber2 = Object.keys($scope.issues).length;
+		});
 
-    		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame).success(function (data) 
-    		{
-    			$scope.repos = data;
-    			$scope.issuesFound = $scope.repos.open_issues_count > 0 ;
-    		});
-        }
+		//counting pull count according to the date they are created at
+		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame + "/pulls?page=1&per_page=100")
+		.success(function(data)
+		{
+			$scope.issues2 = data;
+			$scope.pullNumber = Object.keys($scope.issues2).length;
+			var yester = new Date();
+			yester.setDate(date.getDate()-1);
+			yester = yester-0;
+			var weeki = new Date();
+			weeki.setDate(date.getDate() - 7);
+			weeki = weeki-0;
+	  
+			var yesterdayPullCount=0,weekPullCount=0,restPullCount=0;
+			//Loop over the entire json to increment our counters respectively
+			for(var i=0;i<$scope.pullNumber;i++)
+			{
+				if( Date.parse(data[i].created_at) > yester) yesterdayPullCount++;
+				else if( Date.parse(data[i].created_at) > weeki && Date.parse(data[i].created_at) <= yester) weekPullCount++;
+				else if(Date.parse(data[i].created_at) <= weeki) restPullCount++;
+			}
+			$scope.yesterdayPullCounts = yesterdayPullCount;
+			$scope.weekPullCounts = weekPullCount;
+			$scope.restPullCounts = restPullCount;
+		});
+   
+		//Total issues
+		$http.get("https://api.github.com/repos/" + $scope.username + "/" + $scope.reponame)
+		.success(function (data) 
+		{
+			$scope.repos = data;
+			$scope.issuesFound = $scope.repos.open_issues_count > 0 ;
+		});
     }
+   }
 
 </script>
 </body>
